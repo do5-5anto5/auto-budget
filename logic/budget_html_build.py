@@ -14,9 +14,16 @@ def set_budget_html(
     labor_price: float,
     labor_qty: float,
     billing_method: str,
+    logo_image: str = None,
 ):
 
     labor_subtotal = labor_qty * labor_price
+    
+    # Generate logo HTML - use image if available, fallback to text
+    if logo_image:
+        logo_html = f'<img src="data:image/jpeg;base64,{logo_image}" style="width: 100%; height: 100%; object-fit: cover; display: block;" alt="Logo">'
+    else:
+        logo_html = f'<span style="color: #a8bfd4; font-size: 10px; text-align: center; line-height: 1.3; display: block;">{logo}</span>'
 
     return f"""
 <meta charset="UTF-8">
@@ -33,8 +40,8 @@ def set_budget_html(
         </div>
     </div>
     <div
-        style="width: 64px; height: 64px; border-radius: 8px; background: #1e3a5f; display: flex; align-items: center; justify-content: center; border: 1.5px solid #2e5a8f;">
-        <span style="color: #a8bfd4; font-size: 11px; text-align: center; line-height: 1.3;">{logo}</span>
+        style="width: 80px; height: 80px; border-radius: 12px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border: 2px solid #2e5a8f; overflow: hidden;">
+        {logo_html}
     </div>
     </div>
 
