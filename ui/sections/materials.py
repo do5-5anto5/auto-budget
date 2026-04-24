@@ -4,7 +4,7 @@ import state
 TABLE_ROW_OFFSET = 2  # 0 = header, 1 = divider, 2+ = data
 
 
-def build(parent: ctk.CTkScrollableFrame, start_row: int) -> None:
+def build(parent: ctk.CTkScrollableFrame, start_row: int) -> int:
     """
     Creates the Materials section UI in the scrollable frame, including inputs and a dynamic table.
     """
@@ -146,6 +146,7 @@ def build(parent: ctk.CTkScrollableFrame, start_row: int) -> None:
     )
 
     refresh_table()
+    return start_row + 3
 
 
 def _remove(idx: int, refresh_callback) -> None:

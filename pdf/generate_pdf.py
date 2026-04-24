@@ -1,15 +1,17 @@
 from os import makedirs
-from weasyprint import HTML
 from datetime import date
+from playwright.sync_api import sync_playwright
 
 def generate_pdf(html: str, name: str):    
     """
     Receives html string and parse and saves it to pdf file
     """
-    today = date.today().strftime('%d-%m-%y')
     makedirs('budgets', exist_ok=True)
-
-    try: 
-        HTML(string=html).write_pdf(f'budgets/{name}-{today}.pdf')
-    except Exception as e:
-        print(f'Fail to generate pdf: \n{e}')
+    today = date.today().strftime('%d-%m-%y')
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.set_content(html)
+        page.pdf(path=f'budgets/{name}  {today}.pdf', print_background=True)
+        browser.close()
