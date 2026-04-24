@@ -10,7 +10,7 @@ def set_budget_html(
     logo: str,
     customer_name: str,
     customer_address: str,
-    materials: dict,
+    materials: list[dict],
     labor_price: float,
     labor_qty: float,
     billing_method: str,
@@ -22,7 +22,7 @@ def set_budget_html(
 <meta charset="UTF-8">
 
 <div
-    style="max-width: 600px; margin: 0 auto; background: white; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; font-family: var(--font-sans); color: #222;">
+    style="max-width: 600px; margin: 0 auto; background: white; border: 0.5px solid #000000; border-radius: 12px; overflow: hidden; font-family: sans-serif; color: #222;">
 
     <div
     style="background: #0d2240; padding: 24px 28px; display: flex; align-items: center; justify-content: space-between;">
@@ -61,7 +61,7 @@ def set_budget_html(
     </table>
     <div
         style="text-align: right; font-size: 13px; color: #444; margin-top: 10px; padding-top: 8px; border-top: 0.5px solid #ddd;">
-        Subtotal (materiais): <strong>R$ 537,00</strong>
+        Subtotal (materiais): <strong>R$ {set_materials_subtotal(materials):.2f}</strong>
     </div>
     <div style="border-top: 1px solid #ddd; margin-top: 16px;"></div>
     </div>
@@ -88,18 +88,17 @@ def set_budget_html(
     """
 
 
-def set_items_table_rows(materials: dict):
+def set_items_table_rows(materials: list):
     table_rows = ""
 
     for item in materials:
-        price = f" {(materials[item]['price']):.2f}"
-        total = f"{(materials[item]['units'] * materials[item]['price']):.2f}"
+        price = f"{item['price']:.2f}"
+        total = f"{item['subtotal']:.2f}"
 
         table_rows += f"""
         <tr style="border-bottom: 0.5px solid #f0f0f0;">
-            <tr style="border-bottom: 0.5px solid #f0f0f0;">
-            <td style="padding: 7px 0;">{str(item)}</td>
-            <td style="text-align: center; padding: 7px 0;">{materials[item]['units']}</td>
+            <td style="padding: 7px 0;">{item['name']}</td>
+            <td style="text-align: center; padding: 7px 0;">{item['qty']}</td>
             <td style="text-align: right; padding: 7px 0;">R$ {price}</td>
             <td style="text-align: right; padding: 7px 0;">R$ {total}</td>
         </tr>
@@ -107,9 +106,8 @@ def set_items_table_rows(materials: dict):
     return table_rows
 
 
-def set_materials_subtotal(materials: dict):
+def set_materials_subtotal(materials: list):
     materials_total = 0
     for item in materials:
-        subtotal = float(materials[item]["units"] + materials[item]["price"])
-        materials_total += subtotal
+        materials_total += item['subtotal']
     return float(materials_total)
