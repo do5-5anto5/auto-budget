@@ -1,6 +1,7 @@
 import state
 from pdf.generate_pdf import generate_pdf as generate_pdf_file
 from logic.budget_html_build import set_budget_html
+from database.business import get_business
 
 
 def collect_all_data(parent_frame):
@@ -14,6 +15,10 @@ def collect_all_data(parent_frame):
             'phone': getattr(parent_frame, 'business_phone_entry', None).get() if hasattr(parent_frame, 'business_phone_entry') else "",
             'logo': getattr(parent_frame, 'business_logo_entry', None).get() if hasattr(parent_frame, 'business_logo_entry') else "",
         }
+        
+        # Get logo image from database
+        business_db_data = get_business()
+        business_data['logo_image'] = business_db_data.get('logo_image', '')
         
         # Customer data
         customer_data = {
@@ -66,6 +71,7 @@ def generate_budget_pdf(parent_frame):
             labor_qty=data.get('labor_qty', 0.0),
             billing_method=data.get('billing_method', 'm²'),
             materials=state.materials_data,
+            logo_image=data.get('logo_image', ''),
         )
 
         generate_pdf_file(
