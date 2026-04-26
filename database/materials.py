@@ -1,8 +1,13 @@
 import os
 import sqlite3
+import sys
 
-# Database path
-DB_PATH = os.path.join(os.path.dirname(__file__), "budget.db")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_PATH = os.path.join(BASE_DIR, "budget.db")
 
 
 def get_connection() -> sqlite3.Connection:
