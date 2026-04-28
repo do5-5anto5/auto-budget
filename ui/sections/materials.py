@@ -17,10 +17,61 @@ def build(parent: ctk.CTkScrollableFrame, start_row: int) -> int:
         row=start_row, column=1, columnspan=2, pady=10, padx=10
     )
 
+    # ── Helper functions for dropdown ────────────────────────────────────────
+    def refresh_dropdown():
+        """Refresh the dropdown with materials from database."""
+        materials = get_materials()
+        materials_combo.configure(values=materials)
+    
+    def _on_material_selected(selected):
+        """Handle material selection from dropdown."""
+        if selected:
+            material_entry.delete(0, "end")
+            material_entry.insert(0, selected)
+    
+    def _delete_selected_material(materials_var, materials_combo):
+        """Delete the selected material from database."""
+        selected = materials_var.get()
+        if selected:
+            result = remove_material(selected)
+            print(result)
+            refresh_dropdown()
+            materials_var.set("")  # Clear selection
+
+    # ── Dropdown for saved materials ────────────────────────────────────────
+    dropdown_frame = ctk.CTkFrame(parent, fg_color="transparent")
+    dropdown_frame.grid(
+        row=start_row + 1, column=1, columnspan=2, padx=10, pady=(5, 10), sticky="ew"
+    )
+    dropdown_frame.grid_columnconfigure(0, weight=1)
+    dropdown_frame.grid_columnconfigure(1, weight=0)
+
+    # Create dropdown combobox
+    materials_var = ctk.StringVar()
+    materials_combo = ctk.CTkComboBox(
+        dropdown_frame, 
+        variable=materials_var,
+        values=[],
+        command=lambda selected: _on_material_selected(selected)
+    )
+    materials_combo.set("Selecione um material salvo...")  # Placeholder
+    materials_combo.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+    
+    # Delete button for selected material
+    delete_btn = ctk.CTkButton(
+        dropdown_frame,
+        text="🗑️ Excluir",
+        width=80,
+        fg_color="#8B0000",
+        hover_color="#B22222",
+        command=lambda: _delete_selected_material(materials_var, materials_combo)
+    )
+    delete_btn.grid(row=0, column=1)
+
     # ── Sub-frame inputs ───────────────────────────────────────────────────
     inputs_frame = ctk.CTkFrame(parent, fg_color="transparent")
     inputs_frame.grid(
-        row=start_row + 1, column=1, columnspan=2, padx=10, pady=10, sticky="ew"
+        row=start_row + 2, column=1, columnspan=2, padx=10, pady=10, sticky="ew"
     )
     inputs_frame.grid_columnconfigure(0, weight=1)
     inputs_frame.grid_columnconfigure(1, weight=1)
@@ -54,123 +105,7 @@ def build(parent: ctk.CTkScrollableFrame, start_row: int) -> int:
     qty_entry = ctk.CTkEntry(inputs_frame, validate="key", validatecommand=vcmd)
     qty_entry.grid(row=1, column=2, sticky="ew")
 
-    # ── Helper functions for dropdown ────────────────────────────────────────
-    def refresh_dropdown():
-        """Refresh the dropdown with materials from database."""
-        materials = get_materials()
-        materials_combo.configure(values=materials)
     
-    def _on_material_selected(selected):
-        """Handle material selection from dropdown."""
-        if selected:
-            material_entry.delete(0, "end")
-            material_entry.insert(0, selected)
-    
-    def _delete_selected_material(materials_var, materials_combo):
-        """Delete the selected material from database."""
-        selected = materials_var.get()
-        if selected:
-            result = remove_material(selected)
-            print(result)
-            refresh_dropdown()
-            materials_var.set("")  # Clear selection
-
-    # ── Dropdown for saved materials ────────────────────────────────────────
-    dropdown_frame = ctk.CTkFrame(parent, fg_color="transparent")
-    dropdown_frame.grid(
-        row=start_row + 2, column=1, columnspan=2, padx=10, pady=(5, 10), sticky="ew"
-    )
-    dropdown_frame.grid_columnconfigure(0, weight=1)
-    dropdown_frame.grid_columnconfigure(1, weight=0)
-
-    # Create dropdown combobox
-    materials_var = ctk.StringVar()
-    materials_combo = ctk.CTkComboBox(
-        dropdown_frame, 
-        variable=materials_var,
-        values=[],
-        command=lambda selected: _on_material_selected(selected)
-    )
-    materials_combo.set("Selecione um material salvo...")  # Placeholder
-    materials_combo.grid(row=0, column=0, sticky="ew", padx=(0, 5))
-    
-    # Delete button for selected material
-    delete_btn = ctk.CTkButton(
-        dropdown_frame,
-        text="🗑️ Excluir",
-        width=80,
-        fg_color="#8B0000",
-        hover_color="#B22222",
-        command=lambda: _delete_selected_material(materials_var, materials_combo)
-    )
-    delete_btn.grid(row=0, column=1)
-
-    # ── Table ─────────────────────────────────────────────────────────────────
-    table_frame = ctk.CTkFrame(parent)
-    table_frame.grid(
-        row=start_row + 4, column=1, columnspan=2, padx=10, pady=(10, 0), sticky="ew"
-    )
-    table_frame.grid_columnconfigure(0, weight=3)
-    table_frame.grid_columnconfigure(1, weight=1)
-    table_frame.grid_columnconfigure(2, weight=2)
-    table_frame.grid_columnconfigure(3, weight=2)
-    table_frame.grid_columnconfigure(4, weight=1)
-
-    for col, text in enumerate(["Material", "Qtd", "Unit. (R$)", "Subtotal (R$)", ""]):
-        ctk.CTkLabel(table_frame, text=text, font=header_font).grid(
-            row=0, column=col, padx=6, pady=(6, 2), sticky="ew"
-        )
-    ctk.CTkFrame(table_frame, height=1, fg_color="gray50").grid(
-        row=1, column=0, columnspan=5, sticky="ew", padx=4
-    )
-
-    def refresh_table():
-        """
-        Rebuilds the materials table UI from state data in the Materials section.
-        Clears existing rows beyond header offset.
-        Repopulates rows from state.materials_data with name, qty, price, subtotal, and remove button.
-        Updates the total row with state.get_total() after refresh.
-        """
-        for widget in table_frame.winfo_children():
-            info = widget.grid_info()
-            if info and int(info["row"]) >= TABLE_ROW_OFFSET:
-                widget.destroy()
-
-        for i, item in enumerate(state.materials_data):
-            row = TABLE_ROW_OFFSET + i
-            ctk.CTkLabel(table_frame, text=item["name"], anchor="w").grid(
-                row=row, column=0, padx=6, pady=2, sticky="ew"
-            )
-            ctk.CTkLabel(table_frame, text=str(item["qty"])).grid(
-                row=row, column=1, padx=6, pady=2
-            )
-            ctk.CTkLabel(table_frame, text=f"{item['price']:.2f}").grid(
-                row=row, column=2, padx=6, pady=2
-            )
-            ctk.CTkLabel(table_frame, text=f"{item['subtotal']:.2f}").grid(
-                row=row, column=3, padx=6, pady=2
-            )
-            ctk.CTkButton(
-                table_frame,
-                text="✕",
-                width=28,
-                height=24,
-                fg_color="#8B0000",
-                hover_color="#B22222",
-                command=lambda idx=i: _remove(idx, refresh_table),
-            ).grid(row=row, column=4, padx=4, pady=2)
-
-        total_row = TABLE_ROW_OFFSET + len(state.materials_data)
-        ctk.CTkFrame(table_frame, height=1, fg_color="gray50").grid(
-            row=total_row, column=0, columnspan=5, sticky="ew", padx=4, pady=(4, 0)
-        )
-        ctk.CTkLabel(table_frame, text="Total:", font=header_font, anchor="e").grid(
-            row=total_row + 1, column=0, columnspan=3, padx=6, pady=(2, 8), sticky="e"
-        )
-        ctk.CTkLabel(
-            table_frame, text=f"R$ {state.get_total():.2f}", font=header_font
-        ).grid(row=total_row + 1, column=3, padx=6, pady=(2, 8), sticky="ew")
-
     def _on_add():
         """
         Adds a new material to the materials list and database.
@@ -201,13 +136,82 @@ def build(parent: ctk.CTkScrollableFrame, start_row: int) -> int:
         refresh_table()
         refresh_dropdown()
 
+
+    # ── Add Button ─────────────────────────────────────────────────────────────
     ctk.CTkButton(parent, text="Adicionar material", width=200, command=_on_add).grid(
         row=start_row + 3, column=1, columnspan=2, pady=(8, 0)
     )
 
+    # ── Scrollable Table ─────────────────────────────────────────────────────
+    scrollable_table_frame = ctk.CTkScrollableFrame(parent, height=120)
+    scrollable_table_frame.grid(
+        row=start_row + 4, column=1, columnspan=2, padx=10, pady=(10, 0), sticky="ew"
+    )
+    scrollable_table_frame.grid_columnconfigure(0, weight=3)
+    scrollable_table_frame.grid_columnconfigure(1, weight=1)
+    scrollable_table_frame.grid_columnconfigure(2, weight=2)
+    scrollable_table_frame.grid_columnconfigure(3, weight=2)
+    scrollable_table_frame.grid_columnconfigure(4, weight=1)
+
+    # Table headers inside scrollable frame
+    for col, text in enumerate(["Material", "Qtd", "Unit. (R$)", "Subtotal (R$)", ""]):
+        ctk.CTkLabel(scrollable_table_frame, text=text, font=header_font).grid(
+            row=0, column=col, padx=6, pady=(6, 2), sticky="ew"
+        )
+    ctk.CTkFrame(scrollable_table_frame, height=1, fg_color="gray50").grid(
+        row=1, column=0, columnspan=5, sticky="ew", padx=4
+    )
+
+    def refresh_table():
+        """
+        Rebuilds the materials table UI from state data in the Materials section.
+        Clears existing rows beyond header offset.
+        Repopulates rows from state.materials_data with name, qty, price, subtotal, and remove button.
+        Updates the total row with state.get_total() after refresh.
+        """
+        for widget in scrollable_table_frame.winfo_children():
+            info = widget.grid_info()
+            if info and int(info["row"]) >= TABLE_ROW_OFFSET:
+                widget.destroy()
+
+        for i, item in enumerate(state.materials_data):
+            row = TABLE_ROW_OFFSET + i
+            ctk.CTkLabel(scrollable_table_frame, text=item["name"], anchor="w").grid(
+                row=row, column=0, padx=6, pady=2, sticky="ew"
+            )
+            ctk.CTkLabel(scrollable_table_frame, text=str(item["qty"])).grid(
+                row=row, column=1, padx=6, pady=2
+            )
+            ctk.CTkLabel(scrollable_table_frame, text=f"{item['price']:.2f}").grid(
+                row=row, column=2, padx=6, pady=2
+            )
+            ctk.CTkLabel(scrollable_table_frame, text=f"{item['subtotal']:.2f}").grid(
+                row=row, column=3, padx=6, pady=2
+            )
+            ctk.CTkButton(
+                scrollable_table_frame,
+                text="✕",
+                width=28,
+                height=24,
+                fg_color="#8B0000",
+                hover_color="#B22222",
+                command=lambda idx=i: _remove(idx, refresh_table),
+            ).grid(row=row, column=4, padx=4, pady=2)
+
+        total_row = TABLE_ROW_OFFSET + len(state.materials_data)
+        ctk.CTkFrame(scrollable_table_frame, height=1, fg_color="gray50").grid(
+            row=total_row, column=0, columnspan=5, sticky="ew", padx=4, pady=(4, 0)
+        )
+        ctk.CTkLabel(scrollable_table_frame, text="Total:", font=header_font, anchor="e").grid(
+            row=total_row + 1, column=0, columnspan=3, padx=6, pady=(2, 8), sticky="e"
+        )
+        ctk.CTkLabel(
+            scrollable_table_frame, text=f"R$ {state.get_total():.2f}", font=header_font
+        ).grid(row=total_row + 1, column=3, padx=6, pady=(2, 8), sticky="ew")
+
     refresh_table()
     refresh_dropdown()
-    return start_row + 5
+    return start_row + 6
 
 
 def _remove(idx: int, refresh_callback) -> None:
