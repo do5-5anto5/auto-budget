@@ -8,7 +8,7 @@ from logic.image_processing import base64_to_ctk_image, select_image_file
 
 def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = None, on_logo_update=None):
     """
-    Create a logo upload frame with clickable avatar that adapts to image shape.
+    Create a logo upload frame with clickable area that has rounded corners.
     
     Args:
         parent: Parent widget
@@ -18,54 +18,30 @@ def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = Non
         on_logo_update: Callback function called when logo is updated
         
     Returns:
-        Tuple of (frame, image_label)
+        Tuple of (frame, logo_button)
     """
-    # Detect image shape to adapt UI
-    ui_width = 80
-    ui_height = 80
+    # UI Constants
+    IMAGE_SIZE = (100, 100)
+    CORNER_RADIUS = 15
     
-    # Create frame
-    frame = ctk.CTkFrame(parent, corner_radius=8)
-    frame.grid(row=row, column=column, pady=10, padx=10, sticky="ew")
+    # Create main container frame
+    frame = ctk.CTkFrame(
+        parent, 
+        corner_radius=CORNER_RADIUS,
+        fg_color="#1a1a1a",
+        border_width=1,
+        border_color="#333333"
+    )
+    frame.grid(row=row, column=column, pady=15, padx=15, sticky="ew")
     
-    # Create label for logo display as circular avatar
+    # Inner container for the image to ensure centering
+    inner_container = ctk.CTkFrame(frame, fg_color="transparent")
+    inner_container.pack(pady=20, padx=20)
+    
+    # Handle initial image
+    ctk_img = None
     if logo_data:
-        # If logo exists, create label with image
-        ctk_img = base64_to_ctk_image(logo_data, (100, 100))
-        if ctk_img:
-            logo_label = ctk.CTkLabel(
-                frame, 
-                text="", 
-                image=ctk_img,
-                width=100, 
-                height=100,
-                corner_radius=0,  # No rounded corners - simple square
-                fg_color="transparent"  # No background so image fills the space
-            )
-        else:
-            # Fallback if image loading fails
-            logo_label = ctk.CTkLabel(
-                frame, 
-                text="", 
-                width=100, 
-                height=100,
-                corner_radius=0,  # No rounded corners - simple square
-                fg_color="#1a1a1a",  # Black square placeholder
-                text_color="#666666"
-            )
-    else:
-        # If no logo, show black square placeholder
-        logo_label = ctk.CTkLabel(
-            frame, 
-            text="", 
-            width=100, 
-            height=100,
-            corner_radius=0,  # No rounded corners - simple square
-            fg_color="#1a1a1a",  # Black square placeholder
-            text_color="#666666"
-        )
-    
-    logo_label.pack(pady=10, padx=10)
+        ctk_img = base64_to_ctk_image(logo_data, IMAGE_SIZE, corner_radius=CORNER_RADIUS)
     
     def handle_logo_click():
         """Handle logo upload/update"""
@@ -74,32 +50,45 @@ def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = Non
             from logic.image_processing import resize_image_for_logo
             base64_str = resize_image_for_logo(file_path)
             if base64_str:
-                # Update display - create new image
-                new_ctk_img = base64_to_ctk_image(base64_str, (100, 100))
+                # Update display with rounded corners
+                new_ctk_img = base64_to_ctk_image(base64_str, IMAGE_SIZE, corner_radius=CORNER_RADIUS)
                 if new_ctk_img:
-                    # Update existing label with new image
-                    logo_label.configure(
-                        image=new_ctk_img, 
-                        text="",
-                        fg_color="transparent"  # No background so image fills the square
-                    )
+                    logo_button.configure(image=new_ctk_img, text="")
                 
-                # Store in parent for later saving
+                # Store in parent
                 parent.temp_logo_image = base64_str
                 
-                # Call callback if provided
+                # Call callback
                 if on_logo_update:
                     on_logo_update(base64_str)
                 
                 return base64_str
         return None
     
-    # Make label clickable
-    logo_label.configure(cursor="hand2")
-    logo_label.bind("<Button-1>", lambda e: handle_logo_click())
+    # Create the clickable logo button (instead of a label)
+    # This provides better hover feedback and handles rounded backgrounds natively
+    logo_button = ctk.CTkButton(
+        inner_container,
+        text="+" if not ctk_img else "",
+        image=ctk_img,
+        width=IMAGE_SIZE[0],
+        height=IMAGE_SIZE[1],
+        corner_radius=CORNER_RADIUS,
+        fg_color="#2b2b2b",
+        hover_color="#3b3b3b",
+        text_color="#888888",
+        font=ctk.CTkFont(size=24, weight="bold"),
+        command=handle_logo_click
+    )
+    logo_button.pack()
     
     # Add instruction text
-    instruction_label = ctk.CTkLabel(frame, text="Clique para adicionar logo", font=ctk.CTkFont(size=11))
-    instruction_label.pack(pady=(0, 10))
+    instruction_label = ctk.CTkLabel(
+        frame, 
+        text="Clique para alterar logo", 
+        font=ctk.CTkFont(size=11),
+        text_color="#aaaaaa"
+    )
+    instruction_label.pack(pady=(0, 15))
     
-    return frame, logo_label
+    return frame, logo_button
