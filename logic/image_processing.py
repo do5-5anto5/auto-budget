@@ -7,7 +7,7 @@ import io
 import tkinter as tk
 from tkinter import filedialog
 import customtkinter as ctk
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 def resize_image_for_logo(image_path: str, max_size: tuple = (160, 160)) -> str:
@@ -86,6 +86,76 @@ def resize_image_for_logo(image_path: str, max_size: tuple = (160, 160)) -> str:
         return ""
 
 
+def apply_rounded_mask(image: Image.Image, radius: int = 20) -> Image.Image:
+    """
+    Apply a rounded rectangle mask to a PIL image.
+    
+    Args:
+        image: PIL Image instance
+        radius: Corner radius in pixels
+        
+    Returns:
+        Masked PIL Image
+    """
+    try:
+        # Ensure image has alpha channel
+        if image.mode != 'RGBA':
+            image = image.convert('RGBA')
+            
+        # Create mask
+        mask = Image.new('L', image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.rounded_rectangle((0, 0, image.size[0], image.size[1]), radius=radius, fill=255)
+        
+        # Apply mask
+        result = Image.new('RGBA', image.size, (0, 0, 0, 0))
+        result.paste(image, (0, 0), mask=mask)
+        return result
+    except Exception as e:
+        print(f"Error applying rounded mask: {e}")
+        return image
+
+
+def base64_to_ctk_image(base64_str: str, size: tuple = (100, 100), corner_radius: int = 0) -> ctk.CTkImage:
+    """
+    Convert base64 string to CTkImage for display in UI, optionally with rounded corners.
+    
+    Args:
+        base64_str: Base64 encoded image string
+        size: Size for the CTkImage
+        corner_radius: Optional corner radius for the image
+        
+    Returns:
+        CTkImage instance or None if failed
+    """
+    try:
+        if not base64_str:
+            return None
+            
+        # Convert to PIL Image first
+        pil_img = base64_to_pil_image(base64_str)
+        
+        if pil_img:
+            # Apply rounding if requested
+            if corner_radius > 0:
+                # Scale corner radius proportional to image size if needed
+                # Here we assume radius is relative to the display size
+                # but mask is applied to the full image. 
+                # We should resize first to avoid mask quality issues.
+                pil_img = pil_img.resize(size, Image.Resampling.LANCZOS)
+                pil_img = apply_rounded_mask(pil_img, corner_radius)
+            
+            # Create CTkImage
+            ctk_img = ctk.CTkImage(pil_img, size=size)
+            return ctk_img
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error converting base64 to CTkImage: {e}")
+        return None
+
+
 def base64_to_pil_image(base64_str: str) -> Image.Image:
     """
     Convert base64 string to PIL Image.
@@ -102,43 +172,14 @@ def base64_to_pil_image(base64_str: str) -> Image.Image:
             
         # Decode base64
         img_bytes = base64.b64decode(base64_str)
+        img_buffer = io.BytesIO(img_bytes)
         
         # Create PIL Image
-        img = Image.open(io.BytesIO(img_bytes))
+        img = Image.open(img_buffer)
         return img
         
     except Exception as e:
         print(f"Error converting base64 to PIL Image: {e}")
-        return None
-
-
-def base64_to_ctk_image(base64_str: str, size: tuple = (100, 100)) -> ctk.CTkImage:
-    """
-    Convert base64 string to CTkImage for display in UI.
-    
-    Args:
-        base64_str: Base64 encoded image string
-        size: Size for the CTkImage
-        
-    Returns:
-        CTkImage instance or None if failed
-    """
-    try:
-        if not base64_str:
-            return None
-            
-        # Convert to PIL Image first
-        pil_img = base64_to_pil_image(base64_str)
-        
-        if pil_img:
-            # Create CTkImage
-            ctk_img = ctk.CTkImage(pil_img, size=size)
-            return ctk_img
-        
-        return None
-        
-    except Exception as e:
-        print(f"Error converting base64 to CTkImage: {e}")
         return None
 
 
@@ -168,31 +209,6 @@ def select_image_file(parent_widget=None) -> str:
     return file_path
 
 
-def base64_to_pil_image(base64_str: str) -> Image.Image:
-    """
-    Convert base64 image to PIL Image.
-    
-    Args:
-        base64_str: Base64 encoded image string
-        
-    Returns:
-        PIL Image instance or None if failed
-    """
-    try:
-        if not base64_str:
-            return None
-            
-        # Decode base64
-        img_bytes = base64.b64decode(base64_str)
-        img_buffer = io.BytesIO(img_bytes)
-        
-        # Create PIL Image
-        pil_img = Image.open(img_buffer)
-        return pil_img
-        
-    except Exception as e:
-        print(f"Error converting base64 to PIL Image: {e}")
-        return None
 
 
 def validate_image_file(file_path: str) -> bool:
