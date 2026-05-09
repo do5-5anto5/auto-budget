@@ -5,6 +5,7 @@ from ui.sections import customer
 from ui.sections import header
 from ui.sections import labor
 from logic.data_collector import generate_budget_pdf
+from logic.actions import open_budgets_folder, open_whatsapp
 
 
 def build_app() -> ctk.CTk:
@@ -47,6 +48,29 @@ def build_app() -> ctk.CTk:
         height=40,
         command=lambda: generate_budget_pdf(scroll_frame)
     )
-    generate_button.pack(fill='x', padx=20, pady=5)
+    generate_button.pack(fill='x', padx=20, pady=(5, 10))
+
+    # Action buttons frame
+    actions_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+    actions_frame.pack(fill='x', padx=20)
+
+    open_folder_button = ctk.CTkButton(
+        actions_frame,
+        text="📁 Abrir Pasta",
+        fg_color="#3b3b3b",
+        hover_color="#4b4b4b",
+        command=open_budgets_folder
+    )
+    open_folder_button.pack(side='left', expand=True, fill='x', padx=(0, 5))
+
+    whatsapp_button = ctk.CTkButton(
+        actions_frame,
+        text="💬 WhatsApp",
+        fg_color="#25D366",
+        hover_color="#128C7E",
+        text_color="white",
+        command=open_whatsapp
+    )
+    whatsapp_button.pack(side='left', expand=True, fill='x', padx=(5, 0))
 
     return app
