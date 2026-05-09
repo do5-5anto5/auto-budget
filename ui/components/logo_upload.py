@@ -3,7 +3,8 @@ UI components for logo upload and display.
 """
 
 import customtkinter as ctk
-from logic.image_processing import base64_to_ctk_image, select_image_file
+from PIL import Image
+from logic.image_processing import base64_to_ctk_image, select_image_file, resize_image_for_logo
 
 
 def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = None, on_logo_update=None):
@@ -42,18 +43,47 @@ def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = Non
     ctk_img = None
     if logo_data:
         ctk_img = base64_to_ctk_image(logo_data, IMAGE_SIZE, corner_radius=CORNER_RADIUS)
+    else:
+        # Create a tiny transparent placeholder to ensure button is 'image-ready'
+        placeholder = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+        ctk_img = ctk.CTkImage(placeholder, size=IMAGE_SIZE)
     
     def handle_logo_click():
         """Handle logo upload/update"""
         file_path = select_image_file(parent)
         if file_path:
-            from logic.image_processing import resize_image_for_logo
             base64_str = resize_image_for_logo(file_path)
             if base64_str:
                 # Update display with rounded corners
                 new_ctk_img = base64_to_ctk_image(base64_str, IMAGE_SIZE, corner_radius=CORNER_RADIUS)
                 if new_ctk_img:
-                    logo_button.configure(image=new_ctk_img, text="")
+                    # Schedule redraw to ensure UI is ready after dialog
+                    def do_update():
+                        # Clear old button and create new one to force redraw
+                        for child in inner_container.winfo_children():
+                            child.destroy()
+                        
+                        new_button = ctk.CTkButton(
+                            inner_container,
+                            text="",
+                            image=new_ctk_img,
+                            width=IMAGE_SIZE[0],
+                            height=IMAGE_SIZE[1],
+                            corner_radius=CORNER_RADIUS,
+                            fg_color="#2b2b2b",
+                            hover_color="#3b3b3b",
+                            text_color="#888888",
+                            font=ctk.CTkFont(size=24, weight="bold"),
+                            command=handle_logo_click
+                        )
+                        new_button.pack()
+                        new_button.image = new_ctk_img # Keep reference
+                        
+                        # Update reference in parent if needed
+                        if hasattr(parent, 'business_logo_label'):
+                            parent.business_logo_label = new_button
+                    
+                    parent.after(100, do_update)
                 
                 # Store in parent
                 parent.temp_logo_image = base64_str
@@ -82,11 +112,15 @@ def create_logo_upload_frame(parent, row: int, column: int, logo_data: str = Non
     )
     logo_button.pack()
     
+    # Keep reference for initial image too
+    if ctk_img:
+        logo_button.image = ctk_img
+    
     # Add instruction text
     instruction_label = ctk.CTkLabel(
         frame, 
         text="Clique para alterar logo", 
-        font=ctk.CTkFont(size=11),
+        font=ctk.CTkFont(size=13),
         text_color="#aaaaaa"
     )
     instruction_label.pack(pady=(0, 15))
