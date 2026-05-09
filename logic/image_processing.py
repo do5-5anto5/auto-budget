@@ -145,6 +145,9 @@ def base64_to_ctk_image(base64_str: str, size: tuple = (100, 100), corner_radius
                 pil_img = pil_img.resize(size, Image.Resampling.LANCZOS)
                 pil_img = apply_rounded_mask(pil_img, corner_radius)
             
+            # Force load image data to memory
+            pil_img.load()
+            
             # Create CTkImage
             ctk_img = ctk.CTkImage(pil_img, size=size)
             return ctk_img

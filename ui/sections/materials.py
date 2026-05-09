@@ -54,7 +54,7 @@ def build(parent: ctk.CTkScrollableFrame, start_row: int) -> int:
         values=[],
         command=lambda selected: _on_material_selected(selected)
     )
-    materials_combo.set("Selecione um material salvo...")  # Placeholder
+    materials_combo.set("Adicione / Selecione um material salvo...")  # Placeholder
     materials_combo.grid(row=0, column=0, sticky="ew", padx=(0, 5))
     
     # Delete button for selected material
