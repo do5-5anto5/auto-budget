@@ -23,6 +23,7 @@ def collect_all_data(parent_frame):
         # Customer data
         customer_data = {
             'customer_name': getattr(parent_frame, 'customer_name_entry', None).get() if hasattr(parent_frame, 'customer_name_entry') else "",
+            'customer_phone': getattr(parent_frame, 'customer_phone_entry', None).get() if hasattr(parent_frame, 'customer_phone_entry') else "",
             'customer_address': getattr(parent_frame, 'customer_address_entry', None).get() if hasattr(parent_frame, 'customer_address_entry') else "",
         }
         
